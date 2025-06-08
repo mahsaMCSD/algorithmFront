@@ -3,31 +3,33 @@ export default {
   highlight,
 };
 
-var origBoardEl;
+var tiles;
 
 // ****************************
 
 function draw(boardEl) {
-  origBoardEl = boardEl;
   for (let i = 0; i < 8; i++) {
     let rowEl = document.createElement("div");
     for (let j = 0; j < 8; j++) {
       let tileEl = document.createElement("div");
+      tileEl.dataset.row = i;
+      tileEl.dataset.col = j;
       rowEl.appendChild(tileEl);
     }
     boardEl.appendChild(rowEl);
   }
+  tiles = boardEl.querySelectorAll("div>div");
 }
 
 function highlight(tileEl) {
-  var tiles = origBoardEl.querySelectorAll("div>div");
   //clear currently highlighted
   for (let el of tiles) {
     el.classList.remove("highlighted");
   }
   if (tileEl) {
     let rowEl = tileEl.parentNode;
-    let tileRowIdx = [...origBoardEl.childNodes].indexOf(rowEl);
+    let boardEl = rowEl.parentNode;
+    let tileRowIdx = [...boardEl.childNodes].indexOf(rowEl);
     let tileColIdx = [...rowEl.childNodes].indexOf(tileEl);
 
     //highlight in up-left direction
@@ -53,6 +55,10 @@ function highlight(tileEl) {
   }
 }
 
-function findTile(row,col){
-	return document.querySelector(`#board>div:nth-child(${row+1})>div:nth-child(${col+1})`)
+function findTile(row, col) {
+  for (let el of tiles) {
+    if (el.dataset.row == row && el.dataset.col == col) {
+      return el;
+    }
+  }
 }
