@@ -6,58 +6,61 @@ export default {
 
 // ****************************
 
-var dialed = [
-  [1, 2, 3],
-  [4, 5, 6],
-  [7, 8, 9],
-  [, 0],
+var nearbykeys = [
+  [4, 6],
+  [6, 8],
+  [7, 9],
+  [4, 8],
+  [3, 9, 0],
+  [],
+  [1, 7, 0],
+  [2, 6],
+  [1, 3],
+  [2, 4],
 ];
 
 function reachableKeys(startingDigit) {
-  var reachable = [];
-  for (let [rowIdx, row] of dialed.entries()) {
-    let colIdx = row.indexOf(startingDigit);
-    if (colIdx !== -1) {
-      for (let rowMove of [-2, -1, 1, 2]) {
-        for (let colMove of [-2, -1, 1, 2]) {
-          if (Math.abs(rowMove) !== Math.abs(colMove)) {
-            let newRowIdx = rowIdx + rowMove;
-            let newColIdx = colIdx + colMove;
-            if (
-              newRowIdx >= 0 &&
-              newRowIdx < dialed.length &&
-              newColIdx >= 0 &&
-              newColIdx < dialed[newRowIdx].length &&
-              dialed[newRowIdx][newColIdx] !== undefined
-            ) {
-              reachable.push(dialed[newRowIdx][newColIdx]);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return reachable;
+  return nearbykeys[startingDigit];
 }
 
 function countPaths(startingDigit, hopCount) {
-  // TODO: given the digit/key to start from and
-  // the number of hops to take, return a count
-  // of all the possible paths that could be
-  // traversed
-  return 0;
+  if (hopCount === 0) {
+    return 1;
+  }
+  var pathCount = 0;
+  for (let digit of reachableKeys(startingDigit)) {
+    pathCount += countPaths(digit, hopCount - 1);
+  }
+  return pathCount;
 }
 
 function listAcyclicPaths(startingDigit) {
-  // TODO: given the digit/key to start from,
-  // return a list of the distinct acyclic
-  // paths that are possible to traverse
-  //
-  // e.g. [
-  //   [4, 3, 8, 1, 6, 7, 2, 9],
-  //   [4, 3, 8, 1, 6, 0],
-  //   ...
-  // ]
-  return [];
+  var paths = [];
+  var nextHops = nearbykeys[startingDigit];
+  for (let nextHop of nextHops) {
+    let path = [startingDigit, nextHop];
+    followPaths(path, paths);
+  }
+
+  return paths;
+}
+
+function followPaths(path, paths) {
+  var nextHops = nearbykeys[path[path.length - 1]];
+  var pathForwardPath = false;
+
+  for (let nextHop of nextHops) {
+    // Avoid cycles by checking if the next hop is already in the path
+    if (!path.includes(nextHop)) {
+      pathForwardPath = true;
+      // Create a new path that includes the next hop
+      let newPath = [...path, nextHop];
+      // Recursively follow paths from the new path
+      followPaths(newPath, paths);
+    }
+  }
+
+  if (!pathForwardPath) {
+    paths.push(path);
+  }
 }
