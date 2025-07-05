@@ -4,6 +4,8 @@ export default {
   listAcyclicPaths,
 };
 
+countPaths=memoize(countPaths);
+
 // ****************************
 
 var nearbykeys = [
@@ -63,4 +65,23 @@ function followPaths(path, paths) {
   if (!pathForwardPath) {
     paths.push(path);
   }
+}
+
+function memoize(fn) {
+  var cache = {};
+  // Create a cache object to store results of previous calls
+  // The cache will use a string key based on the function arguments
+  // to store the results of the function calls.
+  // This allows us to avoid recalculating results for the same arguments.  
+  // The key is constructed as a string in the format "start:length"
+  // where 'start' is the starting digit and 'length' is the hop count. 
+  return function memoized(start, length) {
+    if (!cache[`${start}:${length}`]) {
+      // If the result is not in the cache, call the original function
+      // and store the result in the cache. 
+      
+      cache[`${start}:${length}`] = fn(start, length);
+    }
+    return cache[`${start}:${length}`];
+  };
 }
