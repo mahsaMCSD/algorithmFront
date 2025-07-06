@@ -6,6 +6,8 @@ export default {
 // ****************************
 var dict = {};
 var isWord = Symbol("is-word");
+var pool = deePool.create(() => []);
+pool.grow(23);
 
 function loadWords(wordList) {
 	var nodeCount = 0;
@@ -30,7 +32,17 @@ function loadWords(wordList) {
 }
 
 function findWords(input, prefix = "", node = dict) {
-	var words = [];
+	try {
+		var allWords = findAllWords(input, prefix, node);
+		return [...allWords];
+	} finally {
+		allWords.length = 0;
+		pool.recycle(allWords);
+	}
+}
+
+function findAllWords(input, prefix = "", node = dict) {
+	var words = pool.use();
 
 	if (node[isWord]) {
 		words.push(prefix);
@@ -38,22 +50,24 @@ function findWords(input, prefix = "", node = dict) {
 	for (let i = 0; i < input.length; i++) {
 		let currentLetter = input[i];
 		if (node[currentLetter]) {
-			let remainingLetters = [
-				...input.slice(0, i),
-				...input.slice(i + 1),
-			];
-			words.push(
-				...findWords(
-					remainingLetters,
-					prefix + currentLetter,
-					node[currentLetter]
-				)
+			let remainingLetters = pool.use();
+			pool.push(...input.slice(0, i), ...input.slice(i + 1));
+			let moreWords = findAllWords(
+				remainingLetters,
+				prefix + currentLetter,
+				node[currentLetter]
 			);
+			words.push(...moreWords);
+			moreWords.length = remainingLetters = 0;
+			pool.recycle(moreWords);
+			pool.recycle(remainingLetters);
 		}
 	}
 	// If the node is the root dictionary, remove duplicates
 	if (node === dict) {
-		words = [...new Set(words)]; // Remove duplicates
+		let wordsSet = new Set(words);
+		words.length = 0; // Clear the array
+		words.push(...wordsSet); // Add unique words back
 	}
 	return words;
 }
