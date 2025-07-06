@@ -4,70 +4,44 @@ export default {
 };
 
 // ****************************
-var dict = {};
-var isWord = Symbol("is-word");
-var pool = deePool.create(() => []);
-pool.grow(23);
+var dict = new MinimalWordGraph();
 
 function loadWords(wordList) {
-	var nodeCount = 0;
-	if (Object.keys(dict).length > 0) {
-		dict = {};
+	if (dict.size > 0) {
+		dict = new MinimalWordGraph();
 	}
 	for (let word of wordList) {
-		let node = dict;
-		for (let letter of word) {
-			if (!node[letter]) {
-				node[letter] = {
-					[isWord]: false,
-				};
-				nodeCount++;
-			}
-			node = node[letter];
-		}
-		node[isWord] = true;
+		dict.add(word);
 	}
-
-	return nodeCount;
+	dict.makeImmutable();
+	return dict.size;
+}
+function countLetters(str) {
+	var counts = {};
+	for (let i = 0; i < str.length; i++) {
+		counts[str[i]] = (counts[str[i]] || 0) + 1;
+	}
+	return counts;
 }
 
 function findWords(input, prefix = "", node = dict) {
-	try {
-		var allWords = findAllWords(input, prefix, node);
-		return [...allWords];
-	} finally {
-		allWords.length = 0;
-		pool.recycle(allWords);
-	}
-}
+	var inputCounts = countLetters(input);
 
-function findAllWords(input, prefix = "", node = dict) {
-	var words = pool.use();
-
-	if (node[isWord]) {
-		words.push(prefix);
-	}
-	for (let i = 0; i < input.length; i++) {
-		let currentLetter = input[i];
-		if (node[currentLetter]) {
-			let remainingLetters = pool.use();
-			pool.push(...input.slice(0, i), ...input.slice(i + 1));
-			let moreWords = findAllWords(
-				remainingLetters,
-				prefix + currentLetter,
-				node[currentLetter]
-			);
-			words.push(...moreWords);
-			moreWords.length = remainingLetters = 0;
-			pool.recycle(moreWords);
-			pool.recycle(remainingLetters);
+	var words = dict.containsOnly(
+		Array.isArray(input)
+			? input
+			: typeof input == "string"
+			? input.split("")
+			: []
+	);
+	words = [...words(new Set(words))];
+	return words.filter(function removeWords(word){
+		var wordLetterCounts = countLetters(word);
+		for(let [letter, count] of Object.entries(wordLetterCounts)) {
+			if (!inputCounts[letter] || inputCounts[letter] < count) {
+				return false; // Not enough letters in input
+			}
 		}
-	}
-	// If the node is the root dictionary, remove duplicates
-	if (node === dict) {
-		let wordsSet = new Set(words);
-		words.length = 0; // Clear the array
-		words.push(...wordsSet); // Add unique words back
-	}
-	return words;
+		return true; // Word can be formed with input letters
+	})
 }
