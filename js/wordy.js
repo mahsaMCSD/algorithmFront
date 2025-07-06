@@ -1,22 +1,45 @@
 export default {
 	loadWords,
-	findWords
+	findWords,
 };
 
-
 // ****************************
+var dict = [];
 
 function loadWords(wordList) {
-	// TODO: implement a data structure for the array
-	// `wordList` parameter; return the number
-	// of entries inserted into the data structure
-	return 0;
+	dict = [...wordList];
+	return dict.length;
 }
 
 function findWords(input) {
-	// TODO: implement unscrambling/searching logic
-	// for a string of uppercase letters in the
-	// `input` parameter; return the array of
-	// matching words
-	return [];
+	var words = [];
+	for (let word of dict) {
+		if (input.length >= word.length && checkWord(word, input)) {
+			words.push(word);
+		}
+	}
+	return words;
+}
+
+function checkWord(word, input) {
+	return permute("", input);
+
+	function permute(prefix, remaining) {
+		for (let i = 0; i < remaining.length; i++) {
+			let current = prefix + remaining[i];
+			if (current == word) {
+				return true;
+			} else if (remaining.length > 1 && current.length < word.length) {
+				if (
+					permute(
+						current,
+						remaining.slice(0, i) + remaining.slice(i + 1)
+					)
+				) {
+					return true;
+				}
+			}
+		}
+		return;
+	}
 }
